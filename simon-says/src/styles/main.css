@@ -69,10 +69,6 @@ html, body {
   background: var(--user-board-hover);
 }
 
-#user-board > button:active {
-  filter: brightness(0.5);
-}
-
 #menu {
   display: flex;
   justify-content: space-evenly;
