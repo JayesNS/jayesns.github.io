@@ -1,23 +1,28 @@
 class ReferenceBoardController {
   constructor(config) {
-    const {boardSize} = config;
-
-    this.boardSize = boardSize;
+    this.config = config;
 
     this.initialize();
   }
 
   initialize() {
-    this.referenceBoard = document.querySelector('#reference-sequence');
+    this.referenceBoard = document.querySelector('#reference-board');
 
+    this.initializeBoard();
+  }
+
+  initializeBoard() {
     let elementFactory = (index) => {
       const element = document.createElement('div');
-      const boardName = parent.id;
+      const boardName = this.referenceBoard.id;
       element.id = `${boardName}-${index}`;
+      element.addEventListener('animationend', ({target}) => {
+        this.clearHighlight(target);
+      })
       return element;
     };
 
-    fillGrid(this.referenceBoard, elementFactory, this.boardSize);
+    fillGrid(this.referenceBoard, elementFactory, this.config.boardSize);
   }
 
   setSequence(sequence) {
@@ -28,23 +33,24 @@ class ReferenceBoardController {
     let counter = 0;
     this.timer = setInterval(() => {
       if (counter >= length) {
-        clearInterval(this.timer);
-        this.clearBoxes();
+        this.clear()
         return;
       }
       this.highlightBox(this.sequence.sequence[counter]);
       counter++;
-    }, 500);
+    }, this.config.highlightTime * 1.25);
   }
 
-  clearBoxes() {
-    const boxes = Array.from(this.referenceBoard.children);
-    boxes.forEach(box => box.className = '');
+  highlightBox(elementId) {
+    const element = this.referenceBoard.children[elementId];
+    element.style.animation = `highlight ease-in-out ${this.config.highlightTime}ms`;
   }
 
-  highlightBox(boxId) {
-    const box = this.referenceBoard.children[boxId];
-    this.clearBoxes();
-    box.className = 'highlighted';
+  clearHighlight(element) {
+    element.style.animation = '';
+  }
+
+  clear() {
+    clearInterval(this.timer);
   }
 }

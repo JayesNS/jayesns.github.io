@@ -7,39 +7,32 @@ const GameState = {
 
 class Game {
   constructor(config = {}) {
-    const {boardSize = [4, 4]} = config;
-    this.boardSize = boardSize;
-    this.state = GameState.AWAITING;
+    this.config = config;
+    this.state = GameState.AWAITING; 
 
+    this.initialize(config);
+  }
+
+  initialize(config) {
     this.menu = new MenuController({
       ...config,
       onStart: this.start.bind(this),
       onReset: this.reset.bind(this)
     });
-    this.referenceBoard = new ReferenceBoardController({boardSize});
-
-
-    this.userSequence = document.querySelector('#user-sequence');
-
-    this.initialize();
+    this.referenceBoard = new ReferenceBoardController(this.config);
+    this.userBoard = new UserBoardController({
+      boardSize: this.config.boardSize,
+      onUserInput: this.handleUserInput.bind(this)
+    });
   }
 
-  initialize() {
-    // TODO: move to UserBoardController
-    this.initializeGameBoard(this.userSequence, 'button');
-    const boxes = Array.from(document.querySelectorAll('#user-sequence > *'));
-    boxes.forEach(box => {
-      box.addEventListener('click', ({target}) => {
-        if (this.state !== GameState.PLAYING) {
-          return;
-        }
+  handleUserInput(tileId) {
+    if (this.state !== GameState.PLAYING) {
+      return;
+    }
 
-        const value = parseInt(target.value);
-        this.sequence.userInput.push(value);
-        this.sequence.checkUserInput(undefined, this.win.bind(this), this.lose.bind(this), this.play.bind(this));
-      })
-    });
-    //
+    this.sequence.userInput.push(tileId);
+    this.sequence.checkUserInput(undefined, this.win.bind(this), this.lose.bind(this), this.play.bind(this));
   }
 
   play() {
@@ -49,13 +42,13 @@ class Game {
 
   win() {
     this.state = GameState.WON;
-    alert('win');
+    alert('Winner winner chicken dinner!');
   }
 
   lose() {
     this.state = GameState.LOST;
     this.referenceBoard.showSequence(this.sequence.length);
-    alert('game over');
+    alert('Game over! Try again');
   }
 
   start() {
@@ -64,7 +57,10 @@ class Game {
       return;
     }
 
-    this.sequence = new Sequence({length: this.menu.getDifficulty(), maxValue: this.boardSize[0] * this.boardSize[1]});
+    this.sequence = new Sequence({
+      length: this.menu.getDifficulty(),
+      maxValue: this.getTileAmount()
+    });
     this.referenceBoard.setSequence(this.sequence);
     this.play();
   }
@@ -74,18 +70,13 @@ class Game {
       console.warn('Game is not started cannot reset');
     }
 
-    this.sequence = new Sequence({length: this.menu.getDifficulty(), maxValue: this.boardSize[0] * this.boardSize[1]});
-    this.referenceBoard.setSequence(this.sequence);
-    this.play();
+    this.referenceBoard.clear();
+    this.userInput = [];
+    this.state = GameState.AWAITING;
   }
 
-  initializeGameBoard(parent, elementType = 'div') {
-    let elementFactory = (index) => {
-      const element = document.createElement(elementType);
-      element.value = index;
-      return element;
-    };
-
-    fillGrid(parent, elementFactory, this.boardSize);
+  getTileAmount() {
+    const [width, height] = this.config.boardSize;
+    return width * height;
   }
 }
